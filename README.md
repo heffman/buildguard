@@ -30,6 +30,9 @@ buildguard check requirements.txt --json
 buildguard check requirements.txt --timeout 300
 buildguard check requirements.txt --verbose-errors
 buildguard check requirements.txt --show-available-versions
+buildguard check requirements.txt --python python3.6 --no-upgrade-tools
+buildguard check requirements.txt --python python3.6 --python-m-pip
+buildguard check requirements.txt --pip-version 23.2.1 --setuptools-version 65.7.0 --wheel-version 0.38.4
 ```
 
 ## Installation
@@ -90,6 +93,18 @@ python scripts/smoke_test_missing_distribution.py
 ## What It Checks
 
 `buildguard check` verifies that dependencies from a requirements file still install in a clean environment, even when your repository code has not changed.
+
+If you are validating against an older Python interpreter (for example `--python python3.6`), use `--no-upgrade-tools`. This skips `pip/setuptools/wheel` upgrades inside the temporary venv and is often more stable for legacy interpreter tests.
+
+If the `pip` wrapper binary is broken on your machine for that interpreter, use `--python-m-pip` so buildguard runs pip as `python -m pip` inside the temporary venv.
+
+When needed, you can pin build tool versions during the upgrade step:
+
+- `--pip-version <version>`
+- `--setuptools-version <version>`
+- `--wheel-version <version>`
+
+These options require tool upgrades to be enabled (do not combine with `--no-upgrade-tools`).
 
 ## Example Output
 
