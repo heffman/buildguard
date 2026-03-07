@@ -30,6 +30,61 @@ buildguard check requirements.txt --json
 buildguard check requirements.txt --timeout 300
 ```
 
+## Installation
+
+Install from the repository root:
+
+```bash
+python3 -m pip install .
+```
+
+Install in editable mode for local development:
+
+```bash
+python3 -m pip install -e . --no-build-isolation
+```
+
+## Local Venv Workflow
+
+Manual setup:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e . --no-build-isolation
+buildguard --version
+```
+
+One-command setup script:
+
+```bash
+bash scripts/setup_local_venv.sh
+```
+
+Optional script arguments:
+
+```bash
+bash scripts/setup_local_venv.sh python3.11 .venv
+```
+
+After setup, activate the environment:
+
+```bash
+source .venv/bin/activate
+```
+
+Then run checks from the repo:
+
+```bash
+buildguard check examples/requirements-good.txt
+buildguard check examples/requirements-bad.txt
+buildguard check examples/requirements-good.txt --json
+python scripts/smoke_test_check_success.py
+python scripts/smoke_test_check_failure.py
+python scripts/smoke_test_missing_distribution.py
+```
+
 ## What It Checks
 
 `buildguard check` verifies that dependencies from a requirements file still install in a clean environment, even when your repository code has not changed.

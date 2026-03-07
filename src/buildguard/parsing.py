@@ -9,6 +9,17 @@ _NOISE_PREFIXES = (
     'Looking in indexes:',
     '[notice] ',
 )
+_SIGNAL_PATTERNS = (
+    'Failed building wheel for',
+    'error: subprocess-exited-with-error',
+    'Could not find a version that satisfies the requirement',
+    'No matching distribution found for',
+    'ResolutionImpossible',
+    'metadata-generation-failed',
+    'Failed to build',
+    'ERROR:',
+)
+_MAX_SUMMARY_LINE_LENGTH = 220
 
 
 def _meaningful_lines(lines: Iterable[str]) -> List[str]:
@@ -82,11 +93,30 @@ def extract_failing_package_hint(output_text: str) -> Optional[str]:
 def extract_error_tail(stdout_text: str, stderr_text: str) -> Tuple[str, ...]:
     combined_lines = _meaningful_lines((stdout_text + '\n' + stderr_text).splitlines())
     filtered_lines = [line for line in combined_lines if not line.startswith(_NOISE_PREFIXES)]
-    if filtered_lines:
-        return tuple(filtered_lines[-_MEANINGFUL_LINE_LIMIT:])
-    return tuple(combined_lines[-_MEANINGFUL_LINE_LIMIT:])
+    source_lines = filtered_lines if filtered_lines else combined_lines
+
+    summarized_lines = [_summarize_error_line(line) for line in source_lines]
+    signal_lines = [line for line in summarized_lines if _is_signal_line(line)]
+    selected_lines = signal_lines if signal_lines else summarized_lines
+    return tuple(selected_lines[-_MEANINGFUL_LINE_LIMIT:])
 
 
 def extract_stream_tail(stream_text: str, limit: int = _MEANINGFUL_LINE_LIMIT) -> Tuple[str, ...]:
     meaningful = _meaningful_lines(stream_text.splitlines())
     return tuple(meaningful[-limit:])
+
+
+def _summarize_error_line(line: str) -> str:
+    summarized_line = line
+    if ' (from versions:' in summarized_line:
+        summarized_line = summarized_line.split(' (from versions:', 1)[0]
+    if len(summarized_line) > _MAX_SUMMARY_LINE_LENGTH:
+        summarized_line = summarized_line[: _MAX_SUMMARY_LINE_LENGTH - 3] + '...'
+    return summarized_line
+
+
+def _is_signal_line(line: str) -> bool:
+    for pattern in _SIGNAL_PATTERNS:
+        if pattern in line:
+            return True
+    return False

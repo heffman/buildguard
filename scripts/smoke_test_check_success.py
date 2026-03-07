@@ -21,7 +21,7 @@ def main() -> int:
         '-m',
         'buildguard',
         'check',
-        str(repo_root / 'examples' / 'requirements-good.txt'),
+        str(repo_root / 'examples' / 'requirements-empty.txt'),
         '--no-upgrade-tools',
     ]
     completed_process = subprocess.run(command, capture_output=True, text=True, env=environment, check=False)
