@@ -11,11 +11,14 @@ VENV_DIR="${2:-.venv}"
 cat <<MSG
 Local virtual environment is ready.
 
-Run commands with:
-  ${VENV_DIR}/bin/buildguard check examples/requirements-good.txt
-  ${VENV_DIR}/bin/buildguard check examples/requirements-bad.txt
-  ${VENV_DIR}/bin/python -m buildguard check examples/requirements-good.txt --json
-  ${VENV_DIR}/bin/python scripts/smoke_test_check_success.py
-  ${VENV_DIR}/bin/python scripts/smoke_test_check_failure.py
-  ${VENV_DIR}/bin/python scripts/smoke_test_missing_distribution.py
+Activate the environment first:
+  source ${VENV_DIR}/bin/activate
+
+Then run commands with:
+  buildguard check examples/requirements-good.txt
+  buildguard check examples/requirements-bad.txt
+  buildguard check examples/requirements-good.txt --json
+  python scripts/smoke_test_check_success.py
+  python scripts/smoke_test_check_failure.py
+  python scripts/smoke_test_missing_distribution.py
 MSG

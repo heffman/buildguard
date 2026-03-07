@@ -25,6 +25,13 @@ class CheckResult:
     pip_exit_code: Optional[int]
     elapsed_seconds: float
     failing_package_hint: Optional[str]
+    failing_package_hint_is_best_effort: bool
+    failure_category: Optional[str]
+    failure_detail: Optional[str]
+    suggested_fixes: Tuple[str, ...]
+    available_versions: Tuple[str, ...]
+    available_versions_more_count: int
+    available_versions_query_error: Optional[str]
     error_tail: Tuple[str, ...]
     stdout_tail: Tuple[str, ...]
     stderr_tail: Tuple[str, ...]

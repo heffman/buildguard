@@ -28,6 +28,8 @@ Common upstream drift this catches includes:
 buildguard check requirements.txt
 buildguard check requirements.txt --json
 buildguard check requirements.txt --timeout 300
+buildguard check requirements.txt --verbose-errors
+buildguard check requirements.txt --show-available-versions
 ```
 
 ## Installation
