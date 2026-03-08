@@ -27,12 +27,6 @@ Common upstream drift this catches includes:
 ```bash
 buildguard check requirements.txt
 buildguard check requirements.txt --json
-buildguard check requirements.txt --timeout 300
-buildguard check requirements.txt --verbose-errors
-buildguard check requirements.txt --show-available-versions
-buildguard check requirements.txt --python python3.6 --no-upgrade-tools
-buildguard check requirements.txt --python python3.6 --python-m-pip
-buildguard check requirements.txt --pip-version 23.2.1 --setuptools-version 65.7.0 --wheel-version 0.38.4
 ```
 
 ## Installation
@@ -43,56 +37,35 @@ Install from the repository root:
 python3 -m pip install .
 ```
 
-Install in editable mode for local development:
+## CI Example
 
-```bash
-python3 -m pip install -e . --no-build-isolation
+GitHub Actions:
+
+```yaml
+name: Buildguard Preflight
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  buildguard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: python -m pip install .
+
+      - run: buildguard check requirements.txt
 ```
 
-## Local Venv Workflow
+One more thing: if this tool is going into a paid Gumroad bundle, the customer-facing INSTALL.md should probably also include this same working GitHub Actions example.
 
-Manual setup:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install -e . --no-build-isolation
-buildguard --version
-```
-
-One-command setup script:
-
-```bash
-bash scripts/setup_local_venv.sh
-```
-
-Optional script arguments:
-
-```bash
-bash scripts/setup_local_venv.sh python3.11 .venv
-```
-
-After setup, activate the environment:
-
-```bash
-source .venv/bin/activate
-```
-
-Then run checks from the repo:
-
-```bash
-buildguard check examples/requirements-good.txt
-buildguard check examples/requirements-bad.txt
-buildguard check examples/requirements-good.txt --json
-python scripts/smoke_test_check_success.py
-python scripts/smoke_test_check_failure.py
-python scripts/smoke_test_missing_distribution.py
-```
-
-## What It Checks
-
-`buildguard check` verifies that dependencies from a requirements file still install in a clean environment, even when your repository code has not changed.
+## Legacy Interpreter Notes
 
 If you are validating against an older Python interpreter (for example `--python python3.6`), use `--no-upgrade-tools`. This skips `pip/setuptools/wheel` upgrades inside the temporary venv and is often more stable for legacy interpreter tests.
 
@@ -105,6 +78,28 @@ When needed, you can pin build tool versions during the upgrade step:
 - `--wheel-version <version>`
 
 These options require tool upgrades to be enabled (do not combine with `--no-upgrade-tools`).
+
+## Development
+
+Editable install:
+
+```bash
+python3 -m pip install -e . --no-build-isolation
+```
+
+Optional local venv setup:
+
+```bash
+bash scripts/setup_local_venv.sh
+```
+
+Smoke tests:
+
+```bash
+python scripts/smoke_test_check_success.py
+python scripts/smoke_test_check_failure.py
+python scripts/smoke_test_missing_distribution.py
+```
 
 ## Example Output
 

@@ -5,7 +5,7 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = 'buildguard'
 version = '0.1.0'
-description = 'Validate that requirements.txt installs cleanly before CI builds run'
+description = 'Catch upstream Python dependency breakage before it surprises your CI build'
 readme = 'README.md'
 requires-python = '>=3.10'
 dependencies = []
