@@ -9,6 +9,37 @@ description = 'Catch upstream Python dependency breakage before it surprises you
 readme = 'README.md'
 requires-python = '>=3.10'
 dependencies = []
+license = 'LicenseRef-Buildguard-Personal-Use'
+license-files = ['LICENSE.txt']
+authors = [
+  {name = 'Jeff Henry'},
+]
+keywords = ['python', 'dependencies', 'ci', 'packaging', 'pip', 'requirements']
+classifiers = [
+  'Development Status :: 3 - Alpha',
+  'Environment :: Console',
+  'Intended Audience :: Developers',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.10',
+  'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
+  'Topic :: Software Development :: Build Tools',
+  'Topic :: Software Development :: Quality Assurance',
+  'Topic :: System :: Installation/Setup',
+]
+
+[project.urls]
+Homepage = 'https://hefftools.dev/buildguard'
+Repository = 'https://github.com/heffman/buildguard'
+Issues = 'https://github.com/heffman/buildguard/issues'
+
+[project.optional-dependencies]
+release = [
+  'build>=1.2.2',
+  'twine>=5.1.1',
+]
 
 [project.scripts]
 buildguard = 'buildguard.cli:main'

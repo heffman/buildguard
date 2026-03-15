@@ -4,11 +4,21 @@ import json
 from typing import Any, Dict
 
 from buildguard import __version__
+from buildguard.licensing import LICENSE_NOTICE, should_show_license_notice
 from buildguard.models import CheckResult
 
 
 def _format_elapsed_seconds(elapsed_seconds: float) -> str:
     return f'{elapsed_seconds:.1f}'
+
+
+def _append_license_notice(lines: list[str]) -> None:
+    if not should_show_license_notice():
+        return
+    lines.extend([
+        '',
+        LICENSE_NOTICE,
+    ])
 
 
 def format_text_report(
@@ -32,6 +42,7 @@ def format_text_report(
             f'elapsed_seconds={_format_elapsed_seconds(result.elapsed_seconds)}',
             f'pip_exit_code={result.pip_exit_code}',
         ])
+        _append_license_notice(lines)
         return '\n'.join(lines)
 
     lines.extend(['FAIL', ''])
@@ -95,6 +106,7 @@ def format_text_report(
         f'elapsed_seconds={_format_elapsed_seconds(result.elapsed_seconds)}',
         f'pip_exit_code={result.pip_exit_code}',
     ])
+    _append_license_notice(lines)
     return '\n'.join(lines)
 
 

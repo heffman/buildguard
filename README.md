@@ -6,6 +6,12 @@ Catch upstream Python dependency breakage before it surprises your CI build.
 
 It is intended as a preflight install check for CI.
 
+Licensing:
+
+- free for personal and other non-commercial use
+- paid commercial license required for business, client, or other commercial use
+- no activation, unlock flow, or license-file check in the CLI
+
 Common upstream drift this catches includes:
 
 - versions disappearing
@@ -63,8 +69,6 @@ jobs:
       - run: buildguard check requirements.txt
 ```
 
-One more thing: if this tool is going into a paid Gumroad bundle, the customer-facing INSTALL.md should probably also include this same working GitHub Actions example.
-
 ## Legacy Interpreter Notes
 
 If you are validating against an older Python interpreter (for example `--python python3.6`), use `--no-upgrade-tools`. This skips `pip/setuptools/wheel` upgrades inside the temporary venv and is often more stable for legacy interpreter tests.
@@ -100,6 +104,11 @@ python scripts/smoke_test_check_success.py
 python scripts/smoke_test_check_failure.py
 python scripts/smoke_test_missing_distribution.py
 ```
+
+## Publishing
+
+PyPI publishing is handled by the GitHub Actions workflow at
+[`publish-pypi.yml`](./.github/workflows/publish-pypi.yml).
 
 ## Example Output
 
@@ -155,3 +164,9 @@ Upstream dependency ecosystem changes can break installs unexpectedly and waste 
 ## Support Scope
 
 `buildguard` v1 is intentionally small and practical. It focuses on deterministic preflight install checks for one requirements file.
+
+## License
+
+See [`LICENSE.txt`](./LICENSE.txt) for the free personal-use terms and
+[`COMMERCIAL_LICENSE.md`](./COMMERCIAL_LICENSE.md) for the commercial licensing
+model.

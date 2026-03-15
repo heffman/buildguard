@@ -12,6 +12,7 @@ from typing import Optional, Sequence
 
 from buildguard import __version__
 from buildguard.checker import run_check
+from buildguard.licensing import LICENSE_NOTICE, should_show_license_notice
 from buildguard.report import format_json_report, format_text_report
 
 logger = logging.getLogger(__name__)
@@ -48,11 +49,8 @@ class _ProgressSpinner:
             time.sleep(0.1)
 
 
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog='buildguard',
-        description='Catch upstream Python dependency breakage before it surprises your CI build.',
-        epilog=(
+def _build_epilog() -> str:
+    epilog = (
             'check command options:\n'
             '  --json\n'
             '  --timeout <seconds>\n'
@@ -65,7 +63,22 @@ def _build_parser() -> argparse.ArgumentParser:
             '  --wheel-version <version>\n'
             '  --verbose-errors\n'
             '  --show-available-versions'
-        ),
+    )
+    if should_show_license_notice():
+        epilog += f'\n\n{LICENSE_NOTICE}'
+    return epilog
+
+
+def _maybe_write_license_notice() -> None:
+    if should_show_license_notice():
+        sys.stdout.write(f'{LICENSE_NOTICE}\n')
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog='buildguard',
+        description='Catch upstream Python dependency breakage before it surprises your CI build.',
+        epilog=_build_epilog(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
@@ -143,7 +156,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if arguments.emit_json:
             sys.stdout.write(json.dumps(output, indent=2) + '\n')
         else:
-            sys.stdout.write('buildguard check: invalid arguments\n\nFAIL\n\n--timeout must be greater than 0\n')
+            sys.stdout.write('buildguard check: invalid arguments\n\nFAIL\n\n--timeout must be greater than 0\n\n')
+            _maybe_write_license_notice()
         return 2
     if arguments.no_upgrade_tools and (
         arguments.pip_version
@@ -180,6 +194,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         else:
             sys.stdout.write('buildguard check: invalid arguments\n\nFAIL\n\n')
             sys.stdout.write('--pip-version/--setuptools-version/--wheel-version require tool upgrades; remove --no-upgrade-tools\n')
+            sys.stdout.write('\n')
+            _maybe_write_license_notice()
         return 2
 
     show_progress = (
@@ -242,7 +258,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         else:
             sys.stdout.write('buildguard check: fatal error\n\nFAIL\n\n')
-            sys.stdout.write(f'{unexpected_error}\n')
+            sys.stdout.write(f'{unexpected_error}\n\n')
+            _maybe_write_license_notice()
         return 2
     finally:
         progress_spinner.stop()
