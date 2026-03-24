@@ -1,62 +1,93 @@
-# buildguard
+# Buildguard
 
-Catch upstream Python dependency breakage before it surprises your CI build.
+**Stop broken Python dependencies from wasting your CI runs.**
 
-`buildguard` is a deterministic CLI that creates a clean virtual environment, attempts to install your pinned dependency set, and fails early when upstream package ecosystem drift breaks installation.
+Your CI passes.  
+You merge.  
+Next build fails — or worse, production breaks.
 
-It is intended as a preflight install check for CI.
+Same `requirements.txt`. Different result.
 
-Licensing:
+Buildguard detects when your dependency install will fail **before CI burns time on it**.
 
-- free for personal and other non-commercial use
-- paid commercial license required for business, client, or other commercial use
-- no activation, unlock flow, or license-file check in the CLI
+---
 
-Common upstream drift this catches includes:
+## What it catches
 
-- versions disappearing
-- wheels removed from package indexes
-- build backend behavior changes
-- dependency resolution breakage
-- incompatible metadata changes
-- missing distributions for a Python version or platform
+Buildguard runs a clean install of your pinned dependencies and surfaces real failure modes:
 
-`buildguard` is not:
+- Missing distributions (package/version no longer available)
+- Python version incompatibilities
+- Broken or inconsistent upstream releases
+- Yanked or partially published packages
 
-- a vulnerability scanner
-- a dependency resolver
-- a lockfile manager
-- a license scanner
+---
 
-## Quick Start
+## Example
+
+```bash
+$ buildguard check requirements.txt
+
+❌ INSTALL FAILURE DETECTED
+
+Package: uvloop==0.17.0  
+Error: No matching distribution found
+
+This will fail your CI build.
+
+Suggested fix:
+- Check available versions
+- Update or remove the pinned version
+```
+
+## Why this matters
+
+Dependency failures are non-obvious and expensive:
+- CI fails after minutes of runtime
+- Failures appear “random” across environments
+- Issues originate upstream — not in your code
+
+Buildguard turns this into a fast preflight check.
+
+## Install
+```bash
+pip install buildguard
+```
+
+## Usage
+```bash
+buildguard check requirements.txt
+```
+
+Optional flags:
+```bash
+--json                    # machine-readable output
+--show-available-versions # show valid versions if install fails
+--python-version 3.11     # simulate a specific Python version
+```
+
+## Use in CI (recommended)
+
+Run Buildguard before your main install step:
 
 ```bash
 buildguard check requirements.txt
-buildguard check requirements.txt --json
 ```
 
-## Installation
+Fail fast. Save time.
 
-Install from the repository root:
-
-```bash
-python3 -m pip install .
-```
-
-## CI Example
-
-GitHub Actions:
-
-```yaml
-name: Buildguard Preflight
+## GitHub Actions example (PyPI install)
+```YAML
+name: Buildguard Check
 
 on:
-  push:
   pull_request:
+  push:
 
 jobs:
   buildguard:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -64,109 +95,45 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: python -m pip install .
+      - name: Install Buildguard
+        run: python -m pip install --upgrade pip buildguard
 
-      - run: buildguard check requirements.txt
+      - name: Run Buildguard
+        run: buildguard check requirements.txt
 ```
 
-## Legacy Interpreter Notes
-
-If you are validating against an older Python interpreter (for example `--python python3.6`), use `--no-upgrade-tools`. This skips `pip/setuptools/wheel` upgrades inside the temporary venv and is often more stable for legacy interpreter tests.
-
-If the `pip` wrapper binary is broken on your machine for that interpreter, use `--python-m-pip` so buildguard runs pip as `python -m pip` inside the temporary venv.
-
-When needed, you can pin build tool versions during the upgrade step:
-
-- `--pip-version <version>`
-- `--setuptools-version <version>`
-- `--wheel-version <version>`
-
-These options require tool upgrades to be enabled (do not combine with `--no-upgrade-tools`).
-
-## Development
-
-Editable install:
-
+## JSON output (for automation)
 ```bash
-python3 -m pip install -e . --no-build-isolation
+buildguard check requirements.txt --json
 ```
 
-Optional local venv setup:
-
-```bash
-bash scripts/setup_local_venv.sh
+Example:
+```JSON
+{
+  "status": "fail",
+  "failure_category": "missing_distribution",
+  "failing_package_hint": "uvloop==0.17.0",
+  "suggested_fixes": [
+    "Check available versions",
+    "Update pinned version"
+  ]
+}
 ```
-
-Smoke tests:
-
-```bash
-python scripts/smoke_test_check_success.py
-python scripts/smoke_test_check_failure.py
-python scripts/smoke_test_missing_distribution.py
-```
-
-## Publishing
-
-PyPI publishing is handled by the GitHub Actions workflow at
-[`publish-pypi.yml`](./.github/workflows/publish-pypi.yml).
-
-## Example Output
-
-Success:
-
-```text
-buildguard check: requirements.txt
-python: python3.11
-venv: /tmp/buildguard-abc123
-
-PASS
-
-requirements installed successfully in a clean environment
-
-summary:
-elapsed_seconds=18.4
-pip_exit_code=0
-```
-
-Failure:
-
-```text
-buildguard check: requirements.txt
-python: python3.11
-venv: /tmp/buildguard-abc123
-
-FAIL
-
-pip install -r requirements.txt exited with code 1
-
-likely failing dependency:
-uvloop==0.17.0
-
-pip error summary:
-Failed building wheel for uvloop
-error: subprocess-exited-with-error
-
-summary:
-elapsed_seconds=22.7
-pip_exit_code=1
-```
-
-## Exit Codes
-
-- `0`: success
-- `1`: install failure
-- `2`: fatal tool/runtime/config error
-
-## Why This Exists
-
-Upstream dependency ecosystem changes can break installs unexpectedly and waste CI time. `buildguard` makes dependency installation a deliberate, fail-fast preflight step.
-
-## Support Scope
-
-`buildguard` v1 is intentionally small and practical. It focuses on deterministic preflight install checks for one requirements file.
 
 ## License
 
-See [`LICENSE.txt`](./LICENSE.txt) for the free personal-use terms and
-[`COMMERCIAL_LICENSE.md`](./COMMERCIAL_LICENSE.md) for the commercial licensing
-model.
+Free for personal use.
+
+Commercial use requires a license:
+👉 https://heffman.gumroad.com/l/buildguard
+
+
+## Why Buildguard exists
+
+This problem shows up everywhere:
+
+> “CI worked yesterday. Today it fails. Nothing changed.”
+
+It’s almost always dependency resolution or upstream state.
+
+Buildguard isolates that failure before it costs you time.

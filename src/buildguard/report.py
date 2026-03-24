@@ -15,6 +15,7 @@ def _format_elapsed_seconds(elapsed_seconds: float) -> str:
 def _append_license_notice(lines: list[str]) -> None:
     if not should_show_license_notice():
         return
+
     lines.extend([
         '',
         LICENSE_NOTICE,
@@ -25,87 +26,126 @@ def format_text_report(
     result: CheckResult,
     include_verbose_errors: bool = False,
 ) -> str:
-    lines = [
-        f'buildguard check: {result.requirements_path}',
-        f'python: {result.python_executable}',
-        f'venv: {result.venv_path}',
-        '',
-    ]
+    lines = []
 
     if result.status == 'pass':
         lines.extend([
-            'PASS',
+            '✅ INSTALL OK',
             '',
-            'requirements installed successfully in a clean environment',
+            f'Requirements: {result.requirements_path}',
+            f'Python: {result.python_executable}',
             '',
-            'summary:',
-            f'elapsed_seconds={_format_elapsed_seconds(result.elapsed_seconds)}',
-            f'pip_exit_code={result.pip_exit_code}',
+            'Pinned requirements installed successfully in a clean environment.',
+            '',
+            f'Elapsed: {_format_elapsed_seconds(result.elapsed_seconds)}s',
+            f'pip exit code: {result.pip_exit_code}',
         ])
         _append_license_notice(lines)
         return '\n'.join(lines)
 
-    lines.extend(['FAIL', ''])
-
     if result.tool_error:
-        lines.append('buildguard encountered a fatal tool/runtime error')
-        lines.append('')
-        if result.tool_error_message:
-            lines.append(result.tool_error_message)
-            lines.append('')
-    else:
-        pip_exit_code = result.pip_exit_code if result.pip_exit_code is not None else -1
-        lines.append(f'pip install -r {result.requirements_path} exited with code {pip_exit_code}')
-        lines.append('')
-        if result.failing_package_hint:
-            if result.failing_package_hint_is_best_effort:
-                lines.append('likely failing dependency (best effort):')
-            else:
-                lines.append('likely failing dependency:')
-            lines.append(result.failing_package_hint)
-            lines.append('')
-        if result.error_tail:
-            lines.append('pip error summary:')
-            for line in result.error_tail:
-                lines.append(line)
-            lines.append('')
-        if result.failure_detail:
-            lines.append('diagnosis:')
-            lines.append(result.failure_detail)
-            lines.append('')
-        if result.suggested_fixes:
-            lines.append('what to try:')
-            for fix in result.suggested_fixes:
-                lines.append(f'- {fix}')
-            lines.append('')
-        if result.available_versions:
-            versions_line = ', '.join(result.available_versions)
-            if result.available_versions_more_count > 0:
-                versions_line = f'{versions_line}, ... (+{result.available_versions_more_count} more)'
-            lines.append('available versions (latest first):')
-            lines.append(versions_line)
-            lines.append('')
-        if result.available_versions_query_error:
-            lines.append('available versions:')
-            lines.append(f'unavailable ({result.available_versions_query_error})')
-            lines.append('')
+        lines.extend([
+            '❌ BUILDGUARD ERROR',
+            '',
+            f'Requirements: {result.requirements_path}',
+            f'Python: {result.python_executable}',
+            '',
+            result.tool_error_message or 'Buildguard encountered a fatal tool/runtime error.',
+        ])
+
         if include_verbose_errors:
             if result.stderr_tail:
-                lines.append('verbose pip stderr tail:')
-                for line in result.stderr_tail:
-                    lines.append(f'  {line}')
-                lines.append('')
+                lines.extend([
+                    '',
+                    'Verbose pip stderr tail:',
+                    *[f'  {line}' for line in result.stderr_tail],
+                ])
             if result.stdout_tail:
-                lines.append('verbose pip stdout tail:')
-                for line in result.stdout_tail:
-                    lines.append(f'  {line}')
-                lines.append('')
+                lines.extend([
+                    '',
+                    'Verbose pip stdout tail:',
+                    *[f'  {line}' for line in result.stdout_tail],
+                ])
+
+        lines.extend([
+            '',
+            f'Elapsed: {_format_elapsed_seconds(result.elapsed_seconds)}s',
+        ])
+        _append_license_notice(lines)
+        return '\n'.join(lines)
 
     lines.extend([
-        'summary:',
-        f'elapsed_seconds={_format_elapsed_seconds(result.elapsed_seconds)}',
-        f'pip_exit_code={result.pip_exit_code}',
+        '❌ INSTALL FAILURE DETECTED',
+        '',
+        f'Requirements: {result.requirements_path}',
+        f'Python: {result.python_executable}',
     ])
+
+    if result.failing_package_hint:
+        lines.extend([
+            '',
+            f'Package: {result.failing_package_hint}',
+        ])
+
+    error_line = None
+    if result.error_tail:
+        error_line = result.error_tail[0].strip()
+    elif result.failure_detail:
+        error_line = result.failure_detail.strip()
+
+    if error_line:
+        lines.extend([
+            f'Error: {error_line}',
+        ])
+
+    lines.extend([
+        '',
+        'This will fail your CI build.',
+    ])
+
+    if result.suggested_fixes:
+        lines.extend([
+            '',
+            'Suggested fix:',
+        ])
+        for fix in result.suggested_fixes[:3]:
+            lines.append(f'- {fix}')
+
+    if result.available_versions:
+        versions_line = ', '.join(result.available_versions)
+        if result.available_versions_more_count > 0:
+            versions_line = f'{versions_line}, ... (+{result.available_versions_more_count} more)'
+        lines.extend([
+            '',
+            'Available versions:',
+            versions_line,
+        ])
+    elif result.available_versions_query_error:
+        lines.extend([
+            '',
+            f'Available versions: unavailable ({result.available_versions_query_error})',
+        ])
+
+    if include_verbose_errors:
+        if result.stderr_tail:
+            lines.extend([
+                '',
+                'Verbose pip stderr tail:',
+                *[f'  {line}' for line in result.stderr_tail],
+            ])
+        if result.stdout_tail:
+            lines.extend([
+                '',
+                'Verbose pip stdout tail:',
+                *[f'  {line}' for line in result.stdout_tail],
+            ])
+
+    lines.extend([
+        '',
+        f'Elapsed: {_format_elapsed_seconds(result.elapsed_seconds)}s',
+        f'pip exit code: {result.pip_exit_code}',
+    ])
+
     _append_license_notice(lines)
     return '\n'.join(lines)
 
@@ -135,6 +175,8 @@ def format_json_report(result: CheckResult) -> str:
         'stderr_tail': list(result.stderr_tail),
         'tool_error': result.tool_error,
     }
+
     if result.tool_error and result.tool_error_message:
         payload['tool_error_message'] = result.tool_error_message
+
     return json.dumps(payload, indent=2)

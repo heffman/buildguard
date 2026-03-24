@@ -77,7 +77,7 @@ def _maybe_write_license_notice() -> None:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog='buildguard',
-        description='Catch upstream Python dependency breakage before it surprises your CI build.',
+        description='Stop broken Python dependencies from wasting your CI runs.',
         epilog=_build_epilog(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -86,7 +86,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest='command', required=True)
     check_parser = subparsers.add_parser(
         'check',
-        help='check for upstream dependency drift by installing requirements in a clean virtual environment',
+        help='fail fast when pinned requirements will break in a clean environment',
     )
     check_parser.add_argument('requirements_path', help='path to requirements.txt file')
     check_parser.add_argument('--json', action='store_true', dest='emit_json', help='emit JSON output')
@@ -113,8 +113,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help='on missing-distribution failures, show a short list of available versions',
     )
     check_parser.description = (
-        'Create a clean virtual environment and install a pinned dependency set to detect upstream '
-        'ecosystem drift before your main CI build runs.'
+        'Create a clean virtual environment and install a pinned dependency set '
+        'to catch broken dependency installs before your main CI build runs.'
     )
 
     return parser
@@ -156,7 +156,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if arguments.emit_json:
             sys.stdout.write(json.dumps(output, indent=2) + '\n')
         else:
-            sys.stdout.write('buildguard check: invalid arguments\n\nFAIL\n\n--timeout must be greater than 0\n\n')
+            sys.stdout.write('❌ BUILDGUARD ERROR\n\n')
+            sys.stdout.write('--timeout must be greater than 0\n\n')
             _maybe_write_license_notice()
         return 2
     if arguments.no_upgrade_tools and (
@@ -192,7 +193,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if arguments.emit_json:
             sys.stdout.write(json.dumps(output, indent=2) + '\n')
         else:
-            sys.stdout.write('buildguard check: invalid arguments\n\nFAIL\n\n')
+            sys.stdout.write('❌ BUILDGUARD ERROR\n\n')
+            sys.stdout.write('invalid arguments\n\nFAIL\n\n')
             sys.stdout.write('--pip-version/--setuptools-version/--wheel-version require tool upgrades; remove --no-upgrade-tools\n')
             sys.stdout.write('\n')
             _maybe_write_license_notice()
@@ -204,7 +206,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         and os.environ.get('CI', '').strip().lower() not in ('1', 'true', 'yes')
     )
     progress_spinner = _ProgressSpinner(
-        message=f'buildguard: checking {arguments.requirements_path}',
+        message=f'buildguard: preflighting {arguments.requirements_path}',
         enabled=show_progress,
     )
 
@@ -257,7 +259,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 + '\n'
             )
         else:
-            sys.stdout.write('buildguard check: fatal error\n\nFAIL\n\n')
+            sys.stdout.write('❌ BUILDGUARD ERROR\n\n')
             sys.stdout.write(f'{unexpected_error}\n\n')
             _maybe_write_license_notice()
         return 2
